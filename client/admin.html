@@ -4,65 +4,328 @@
   <meta charset="UTF-8">
   <title>CivicTrack Admin Dashboard</title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      padding: 20px;
-      max-width: 1200px;
-      margin: auto;
+    :root {
+      --primary: #4361ee;
+      --secondary: #3f37c9;
+      --light: #f8f9fa;
+      --dark: #212529;
+      --success: #28a745;
+      --danger: #dc3545;
+      --warning: #fd7e14;
+      --info: #17a2b8;
     }
+    
+    body {
+      font-family: 'Poppins', sans-serif;
+      background-color: #f8f9fa;
+      padding: 20px;
+      max-width: 1400px;
+      margin: 0 auto;
+      color: #333;
+    }
+    
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 30px;
+      padding-bottom: 15px;
+      border-bottom: 1px solid rgba(0,0,0,0.1);
+    }
+    
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    
+    .logo-icon {
+      font-size: 2rem;
+      color: var(--primary);
+    }
+    
+    .logo-text {
+      font-size: 1.8rem;
+      font-weight: 700;
+      margin: 0;
+      color: var(--primary);
+    }
+    
+    .admin-badge {
+      background-color: var(--danger);
+      color: white;
+      padding: 5px 10px;
+      border-radius: 20px;
+      font-size: 0.8rem;
+      font-weight: 600;
+    }
+    
+    .btn {
+      padding: 10px 15px;
+      border-radius: 8px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      border: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+    
+    .btn-primary {
+      background: linear-gradient(135deg, var(--primary), var(--secondary));
+      color: white;
+    }
+    
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 5px 15px rgba(67, 97, 238, 0.3);
+    }
+    
+    .btn-danger {
+      background: var(--danger);
+      color: white;
+    }
+    
+    .btn-danger:hover {
+      background: #c82333;
+    }
+    
+    .btn-success {
+      background: var(--success);
+      color: white;
+    }
+    
+    .btn-warning {
+      background: var(--warning);
+      color: white;
+    }
+    
+    .btn-sm {
+      padding: 5px 10px;
+      font-size: 0.85rem;
+    }
+    
+    /* Filters section */
+    .filters {
+      background: white;
+      padding: 15px;
+      border-radius: 10px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+      margin-bottom: 20px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 15px;
+      align-items: center;
+    }
+    
+    .filters label {
+      font-weight: 500;
+      color: #555;
+      margin-right: 5px;
+    }
+    
+    select {
+      padding: 8px 12px;
+      border-radius: 6px;
+      border: 1px solid #ddd;
+      font-family: 'Poppins', sans-serif;
+      min-width: 150px;
+    }
+    
+    /* Toggle buttons */
+    .toggle-buttons {
+      display: flex;
+      margin-bottom: 20px;
+      gap: 10px;
+    }
+    
+    .toggle-buttons button {
+      padding: 10px 20px;
+      background-color: #e9ecef;
+      color: #495057;
+      border: none;
+      cursor: pointer;
+      border-radius: 8px;
+      font-weight: 600;
+      transition: all 0.3s ease;
+    }
+    
+    .toggle-buttons button.active {
+      background: linear-gradient(135deg, var(--primary), var(--secondary));
+      color: white;
+    }
+    
+    /* Table styles */
     table {
       width: 100%;
       border-collapse: collapse;
-      margin-bottom: 40px;
+      margin-bottom: 30px;
+      background: white;
+      border-radius: 10px;
+      overflow: hidden;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.05);
     }
+    
     th, td {
-      border: 1px solid #ddd;
-      padding: 10px;
-      text-align: center;
+      padding: 12px 15px;
+      text-align: left;
+      border-bottom: 1px solid #e9ecef;
     }
+    
     th {
-      background-color: #007bff;
+      background: linear-gradient(135deg, var(--primary), var(--secondary));
       color: white;
+      font-weight: 600;
     }
-    select, button {
-      padding: 5px;
+    
+    tr:hover {
+      background-color: #f8f9fa;
     }
+    
+    /* Badges */
     .badge {
       padding: 5px 10px;
-      border-radius: 5px;
-      color: white;
-      font-weight: bold;
+      border-radius: 20px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      display: inline-block;
     }
-    .Reported { background-color: gray; }
-    .InProgress { background-color: orange; }
-    .Resolved { background-color: green; }
-    .flagged {
-      background-color: red;
+    
+    .badge-reported {
+      background-color: var(--info);
       color: white;
-      font-size: 12px;
-      padding: 4px 8px;
-      border-radius: 5px;
-      font-weight: bold;
     }
-    #analytics {
-      font-size: 16px;
+    
+    .badge-in-progress {
+      background-color: var(--warning);
+      color: white;
+    }
+    
+    .badge-resolved {
+      background-color: var(--success);
+      color: white;
+    }
+    
+    .badge-flagged {
+      background-color: var(--danger);
+      color: white;
+      margin-left: 5px;
+    }
+    
+    /* Map styles */
+    #mapSection {
+      margin-bottom: 30px;
+      border-radius: 10px;
+      overflow: hidden;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+      display: none;
+    }
+    
+    #map {
+      height: 500px;
+      width: 100%;
+    }
+    
+    .map-filters {
+      padding: 15px;
+      background: white;
+      display: flex;
+      gap: 15px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    
+    /* Chart section */
+    #chartSection {
+      display: none;
+      margin-bottom: 30px;
+      background: white;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    }
+    
+    .chart-container {
+      position: relative;
+      height: 300px;
+      width: 100%;
+    }
+    
+    /* Analytics */
+    .analytics {
+      display: flex;
+      gap: 20px;
       margin-bottom: 20px;
     }
-    #logoutBtn {
-      float: right;
-      margin-bottom: 20px;
-      background-color: red;
-      color: white;
-      border: none;
-      padding: 10px 15px;
-      cursor: pointer;
+    
+    .stat-card {
+      background: white;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+      flex: 1;
+    }
+    
+    .stat-card h3 {
+      margin-top: 0;
+      color: #6c757d;
+      font-size: 1rem;
+    }
+    
+    .stat-card p {
+      font-size: 1.5rem;
+      font-weight: 700;
+      margin-bottom: 0;
+      color: var(--primary);
+    }
+    .header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 30px;
+  padding-bottom: 15px;
+  border-bottom: 1px solid rgba(0,0,0,0.1);
+  position: relative;
+}
+
+.logo {
+  position: absolute;
+  left: 17%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+#logoutBtn {
+  margin-left: auto;
+}
+    
+    @media (max-width: 768px) {
+      .filters {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+      
+      .toggle-buttons {
+        flex-wrap: wrap;
+      }
+      
+      .analytics {
+        flex-direction: column;
+      }
     }
   </style>
 </head>
 <body>
 
-  <!-- 🔐 Admin check -->
+  <!-- Admin check -->
   <script>
     if (localStorage.getItem("isAdmin") !== "true") {
       alert("Access denied! Please login as admin.");
@@ -70,42 +333,113 @@
     }
   </script>
 
-  <h2>🧑‍💻 CivicTrack Admin Dashboard</h2>
-  <button id="logoutBtn" onclick="logout()">Logout</button>
+  <div class="header">
+  <div class="logo">
+    <i class="fas fa-map-marked-alt logo-icon"></i>
+    <h1 class="logo-text">CivicTrack <span style="font-size: 1.2rem; margin-left: 10px; text-align: center;">Admin Panel</span></h1>
+  </div>
+  <button id="logoutBtn" class="btn btn-danger" onclick="logout()">
+    <i class="fas fa-sign-out-alt"></i> Logout
+  </button>
+</div>
+
+  <!-- View Toggle -->
+  <div class="toggle-buttons">
+    <button id="tableViewBtn" class="active" onclick="toggleView('table')">
+      <i class="fas fa-table"></i> Table View
+    </button>
+    <button id="mapViewBtn" onclick="toggleView('map')">
+      <i class="fas fa-map"></i> Map View
+    </button>
+  </div>
 
   <!-- Filters + Export -->
-  <div style="margin-bottom: 20px;">
-    <label>Filter Category:</label>
-    <select id="categoryFilter">
-      <option value="">All</option>
-      <option value="Roads">Roads</option>
-      <option value="Lighting">Lighting</option>
-      <option value="Water Supply">Water Supply</option>
-      <option value="Cleanliness">Cleanliness</option>
-      <option value="Public Safety">Public Safety</option>
-      <option value="Obstructions">Obstructions</option>
-    </select>
-
-    <label style="margin-left: 20px;">Filter Status:</label>
-    <select id="statusFilter">
-      <option value="">All</option>
-      <option value="Reported">Reported</option>
-      <option value="In Progress">In Progress</option>
-      <option value="Resolved">Resolved</option>
-    </select>
-
-    <button onclick="downloadCSV()" style="margin-left: 20px;">📥 Export Issues to CSV</button>
-    <button onclick="toggleChart()" style="margin-left: 10px;">📊 Chart</button>
+  <div class="filters">
+    <div>
+      <label>Category:</label>
+      <select id="categoryFilter">
+        <option value="">All</option>
+        <option value="Roads">Roads</option>
+        <option value="Lighting">Lighting</option>
+        <option value="Water Supply">Water Supply</option>
+        <option value="Cleanliness">Cleanliness</option>
+        <option value="Public Safety">Public Safety</option>
+        <option value="Obstructions">Obstructions</option>
+      </select>
+    </div>
+    
+    <div>
+      <label>Status:</label>
+      <select id="statusFilter">
+        <option value="">All</option>
+        <option value="Reported">Reported</option>
+        <option value="In Progress">In Progress</option>
+        <option value="Resolved">Resolved</option>
+      </select>
+    </div>
+    
+    <button class="btn btn-primary" onclick="downloadCSV()">
+      <i class="fas fa-download"></i> Export CSV
+    </button>
+    
+    <button class="btn btn-primary" onclick="toggleChart()">
+      <i class="fas fa-chart-bar"></i> Analytics
+    </button>
   </div>
 
-  <div id="analytics"></div>
-
-  <!-- 📊 Chart area (initially hidden) -->
-  <div id="chartSection" style="display: none; margin-bottom: 30px;">
-    <canvas id="categoryChart" width="400" height="200"></canvas>
+  <!-- Analytics Cards -->
+  <div class="analytics" id="analytics">
+    <div class="stat-card">
+      <h3>Total Issues</h3>
+      <p id="totalIssues">0</p>
+    </div>
+    <div class="stat-card">
+      <h3>Most Common Category</h3>
+      <p id="commonCategory">N/A</p>
+    </div>
+    <div class="stat-card">
+      <h3>Reported Today</h3>
+      <p id="reportedToday">0</p>
+    </div>
   </div>
 
-  <!-- 📋 Table -->
+  <!-- Chart area -->
+  <div id="chartSection">
+    <div class="chart-container">
+      <canvas id="categoryChart"></canvas>
+    </div>
+  </div>
+
+  <!-- Map Section -->
+  <div id="mapSection">
+    <div class="map-filters">
+      <div>
+        <label>Status:</label>
+        <select id="mapStatusFilter">
+          <option value="">All</option>
+          <option value="Reported">Reported</option>
+          <option value="In Progress">In Progress</option>
+          <option value="Resolved">Resolved</option>
+        </select>
+      </div>
+      
+      <div>
+        <label>Category:</label>
+        <select id="mapCategoryFilter">
+          <option value="">All</option>
+          <option value="Roads">Roads</option>
+          <option value="Lighting">Lighting</option>
+          <option value="Water Supply">Water Supply</option>
+          <option value="Cleanliness">Cleanliness</option>
+          <option value="Public Safety">Public Safety</option>
+          <option value="Obstructions">Obstructions</option>
+        </select>
+      </div>
+    </div>
+    <div id="map"></div>
+  </div>
+
+  <!-- Table Section -->
   <table id="issueTable">
     <thead>
       <tr>
@@ -122,207 +456,8 @@
     </tbody>
   </table>
 
-  <script>
-    const tableBody = document.querySelector('#issueTable tbody');
+    <script src="adminscript.js"></script>
 
-    function loadIssues() {
-      fetch('http://localhost:8000/api/issues')
-        .then(res => res.json())
-        .then(issues => {
-          const category = document.getElementById('categoryFilter').value;
-          const status = document.getElementById('statusFilter').value;
-
-          const filtered = issues.filter(issue => {
-            return (!category || issue.category === category) &&
-                   (!status || issue.status === status);
-          });
-
-          tableBody.innerHTML = '';
-          loadAnalytics(filtered);
-          renderIssues(filtered);
-        });
-    }
-
-    function renderIssues(issues) {
-      issues.forEach(issue => {
-        const row = document.createElement('tr');
-        row.innerHTML = `
-          <td>${issue.title}</td>
-          <td>${issue.category}</td>
-          <td>
-            <span class="badge ${issue.status.replace(/\s/g, '')}">${issue.status}</span><br>
-            ${issue.isFlagged ? '<span class="flagged">Flagged</span>' : ''}
-          </td>
-          <td>
-            <select data-id="${issue._id}" onchange="updateStatus(this)">
-              <option value="">--Select--</option>
-              <option value="Reported">Reported</option>
-              <option value="In Progress">In Progress</option>
-              <option value="Resolved">Resolved</option>
-            </select>
-          </td>
-          <td>
-            <button onclick="toggleFlag('${issue._id}')">
-              ${issue.isFlagged ? 'Unflag' : 'Flag'}
-            </button>
-          </td>
-          <td>
-            <button onclick="deleteIssue('${issue._id}')">Delete</button>
-          </td>
-        `;
-        tableBody.appendChild(row);
-      });
-    }
-
-    function updateStatus(selectEl) {
-      const id = selectEl.getAttribute('data-id');
-      const status = selectEl.value;
-
-      fetch(`http://localhost:8000/api/issues/${id}/status`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status })
-      })
-      .then(res => res.json())
-      .then(data => {
-        alert(data.message || "Status updated");
-        loadIssues();
-      })
-      .catch(err => {
-        console.error('❌ PATCH Error:', err);
-        alert("Failed to update status.");
-      });
-    }
-
-    function deleteIssue(id) {
-      if (!confirm("Are you sure you want to delete this issue?")) return;
-
-      fetch(`http://localhost:8000/api/issues/${id}`, {
-        method: 'DELETE'
-      })
-      .then(res => res.json())
-      .then(data => {
-        alert(data.message || "Issue deleted");
-        loadIssues();
-      })
-      .catch(err => {
-        console.error('❌ DELETE Error:', err);
-        alert("Failed to delete issue.");
-      });
-    }
-
-    function toggleFlag(id) {
-      fetch(`http://localhost:8000/api/issues/${id}/flag`, {
-        method: 'PATCH'
-      })
-      .then(res => res.json())
-      .then(data => {
-        alert(data.message || "Flag updated");
-        loadIssues();
-      })
-      .catch(err => {
-        console.error('❌ FLAG Error:', err);
-        alert("Failed to toggle flag.");
-      });
-    }
-
-    function downloadCSV() {
-      fetch('http://localhost:8000/api/issues')
-        .then(res => res.json())
-        .then(data => {
-          const csvRows = [];
-          const headers = ['Title', 'Category', 'Status', 'Latitude', 'Longitude', 'Flagged'];
-          csvRows.push(headers.join(','));
-
-          data.forEach(issue => {
-            const row = [
-              `"${issue.title}"`,
-              issue.category,
-              issue.status,
-              issue.location?.coordinates[1] || '',
-              issue.location?.coordinates[0] || '',
-              issue.isFlagged ? 'Yes' : 'No'
-            ];
-            csvRows.push(row.join(','));
-          });
-
-          const blob = new Blob([csvRows.join('\n')], { type: 'text/csv' });
-          const url = window.URL.createObjectURL(blob);
-
-          const a = document.createElement('a');
-          a.setAttribute('href', url);
-          a.setAttribute('download', 'civictrack_issues.csv');
-          a.click();
-        });
-    }
-
-    function loadAnalytics(issues) {
-      const total = issues.length;
-      const categories = {};
-      issues.forEach(issue => {
-        categories[issue.category] = (categories[issue.category] || 0) + 1;
-      });
-
-      const mostCommon = Object.entries(categories).sort((a, b) => b[1] - a[1])[0];
-
-      document.getElementById('analytics').innerHTML = `
-        <strong>Total Issues:</strong> ${total}<br>
-        <strong>Most Reported Category:</strong> ${mostCommon ? mostCommon[0] + ' (' + mostCommon[1] + ')' : 'N/A'}
-      `;
-
-      renderChart(categories);
-    }
-
-    let chartInstance = null;
-
-    function renderChart(data) {
-      const ctx = document.getElementById('categoryChart').getContext('2d');
-      const labels = Object.keys(data);
-      const values = Object.values(data);
-
-      if (chartInstance) {
-        chartInstance.destroy();
-      }
-
-      chartInstance = new Chart(ctx, {
-        type: 'bar',
-        data: {
-          labels,
-          datasets: [{
-            label: 'Issues by Category',
-            data: values,
-            backgroundColor: 'rgba(0, 123, 255, 0.7)',
-            borderRadius: 5
-          }]
-        },
-        options: {
-          responsive: true,
-          plugins: {
-            legend: { display: false },
-            title: { display: true, text: 'Issue Category Distribution' }
-          },
-          scales: {
-            y: { beginAtZero: true }
-          }
-        }
-      });
-    }
-
-    function toggleChart() {
-      const section = document.getElementById('chartSection');
-      section.style.display = (section.style.display === 'none') ? 'block' : 'none';
-    }
-
-    function logout() {
-      localStorage.removeItem("isAdmin");
-      window.location.href = "login.html";
-    }
-
-    document.getElementById('categoryFilter').addEventListener('change', loadIssues);
-    document.getElementById('statusFilter').addEventListener('change', loadIssues);
-
-    loadIssues();
-  </script>
 
 </body>
 </html>

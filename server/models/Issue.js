@@ -38,10 +38,14 @@ const issueSchema = new mongoose.Schema({
     default: Date.now
   },
   isFlagged: {
-  type: Boolean,
-  default: false
-},
-
+    type: Boolean,
+    default: false
+  },
+  mode: {
+    type: String,
+    enum: ['anonymous', 'verified'],
+    default: 'anonymous'
+  }
 });
 
 // Add geospatial index for location-based queries

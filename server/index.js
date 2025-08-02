@@ -4,12 +4,15 @@ const cors = require('cors');
 const connectDB = require('./config/db');
 const issueRoutes = require('./routes/issues');
 const adminRoutes = require('./routes/admin');
+const userRoutes = require('./routes/user');
 
 
 const app = express();
 app.use(cors());
 app.use(express.json());
 connectDB();
+app.use('/api/users', userRoutes);  // 👈 Mount user routes
+
 
 // Attach the route
 app.use('/api/issues', issueRoutes);

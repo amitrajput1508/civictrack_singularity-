@@ -58,10 +58,8 @@
 
     <label>Distance:</label>
     <select id="distanceFilter">
-      <option value="">All</option>
-      <option value="1">Within 1 km</option>
       <option value="3">Within 3 km</option>
-      <option value="5">Within 5 km</option>
+      <option value="5" selected>Within 5 km</option>
     </select>
   </div>
 
@@ -69,7 +67,7 @@
   <div id="map"></div>
 
   <script>
-    const map = L.map('map').setView([28.6139, 77.2090], 12); // Default to Delhi
+    const map = L.map('map').setView([28.6139, 77.2090], 12); // Default Delhi
 
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       attribution: '&copy; OpenStreetMap contributors'
@@ -78,7 +76,6 @@
     let userLocation = null;
     let allMarkers = [];
 
-    // 📌 Color based on status
     function getMarkerColor(status) {
       switch (status) {
         case 'Reported': return 'gray';
@@ -95,7 +92,6 @@
 
     function addMarker(issue) {
       if (!issue.location || !issue.location.coordinates) return;
-
       const [lng, lat] = issue.location.coordinates;
 
       const marker = L.circleMarker([lat, lng], {
@@ -109,10 +105,12 @@
         <strong>${issue.title}</strong><br>
         <em>${issue.category}</em><br>
         ${issue.description}<br>
+        <small>Status: ${issue.status}</small><br>
+        <small>Reported as: ${issue.mode || 'anonymous'}</small>
       `;
 
       if (issue.photo?.length > 0) {
-        popup += `<img src="http://localhost:8000/${issue.photo[0]}" class="popup-img">`;
+        popup += `<br><img src="http://localhost:8000/${issue.photo[0]}" class="popup-img">`;
       }
 
       marker.bindPopup(popup);
@@ -121,22 +119,21 @@
     }
 
     function calculateDistance(lat1, lon1, lat2, lon2) {
-      const R = 6371; // Radius of the earth in km
+      const R = 6371; // Radius in km
       const dLat = (lat2 - lat1) * Math.PI / 180;
       const dLon = (lon2 - lon1) * Math.PI / 180;
       const a =
         Math.sin(dLat / 2) * Math.sin(dLat / 2) +
         Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
         Math.sin(dLon / 2) * Math.sin(dLon / 2);
-
       const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-      return R * c; // Distance in km
+      return R * c;
     }
 
     async function loadIssues() {
       const status = document.getElementById('statusFilter').value;
       const category = document.getElementById('categoryFilter').value;
-      const distance = parseFloat(document.getElementById('distanceFilter').value);
+      const distance = parseFloat(document.getElementById('distanceFilter').value || '5');
 
       const res = await fetch('http://localhost:8000/api/issues');
       const issues = await res.json();
@@ -147,20 +144,19 @@
         const [lng, lat] = issue.location?.coordinates || [];
         if (!lat || !lng) return;
 
-        // ✅ Apply Filters
         if (status && issue.status !== status) return;
         if (category && issue.category !== category) return;
 
-        if (userLocation && distance) {
+        if (userLocation) {
           const d = calculateDistance(userLocation.lat, userLocation.lng, lat, lng);
-          if (d > distance) return;
+          if (d > distance) return; // ✅ Enforce distance filter
         }
 
         addMarker(issue);
       });
     }
 
-    // 📍 Get user's location
+    // 📍 Get user location
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (pos) => {
@@ -176,12 +172,13 @@
           loadIssues();
         },
         (err) => {
-          console.warn('Geolocation denied or failed:', err.message);
-          loadIssues(); // Still show without location
+          alert("⚠️ Location access denied. Showing map with limited results.");
+          loadIssues(); // fallback
         }
       );
     } else {
-      loadIssues(); // Fallback
+      alert("⚠️ Geolocation not supported.");
+      loadIssues();
     }
 
     document.getElementById('statusFilter').addEventListener('change', loadIssues);

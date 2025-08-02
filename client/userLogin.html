@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Admin Login - CivicTrack</title>
+  <title>CivicTrack - Login</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
@@ -192,13 +192,31 @@
       box-shadow: 0 5px 15px rgba(67, 97, 238, 0.3);
     }
     
+    .login-footer {
+      text-align: center;
+      margin-top: 15px;
+      font-size: 0.85rem;
+      color: #666;
+    }
+    
+    .login-footer a {
+      color: var(--primary);
+      text-decoration: none;
+      font-weight: 600;
+      transition: all 0.2s ease;
+    }
+    
+    .login-footer a:hover {
+      color: var(--secondary);
+      text-decoration: underline;
+    }
+    
     .alert {
       padding: 10px 12px;
       border-radius: 8px;
       margin-bottom: 15px;
       font-size: 0.85rem;
       display: none;
-      text-align: center;
     }
     
     .alert-danger {
@@ -211,6 +229,12 @@
       background-color: rgba(40, 167, 69, 0.1);
       border-left: 4px solid var(--success);
       color: var(--success);
+    }
+    
+    .footer-links {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 15px;
     }
     
     @media (max-width: 480px) {
@@ -229,6 +253,11 @@
       .login-title {
         font-size: 1rem;
       }
+      
+      .footer-links {
+        flex-direction: column;
+        gap: 8px;
+      }
     }
   </style>
 </head>
@@ -237,21 +266,21 @@
     <div class="login-header">
       <button class="close-btn" onclick="window.location.href='home.html'">&times;</button>
       <div class="logo">
-        <i class="fas fa-user-shield logo-icon"></i>
+        <i class="fas fa-map-marked-alt logo-icon"></i>
         <h1 class="logo-text">CivicTrack</h1>
       </div>
-      <h2 class="login-title">Admin Portal</h2>
+      <h2 class="login-title">Welcome Back</h2>
     </div>
     
     <div class="login-form">
-      <div id="alertBox" class="alert alert-danger" style="display: none;"></div>
+      <div id="alertBox" class="alert" style="display: none;"></div>
       
       <form id="loginForm">
         <div class="form-group">
-          <label for="email">Admin Email</label>
+          <label for="username">Username</label>
           <div class="input-wrapper">
-            <i class="fas fa-envelope input-icon"></i>
-            <input type="email" id="email" class="form-control" placeholder="Enter admin email" required>
+            <i class="fas fa-user input-icon"></i>
+            <input type="text" id="username" class="form-control" placeholder="Enter username" required>
           </div>
         </div>
         
@@ -267,9 +296,18 @@
           <i class="fas fa-sign-in-alt"></i> Login
         </button>
       </form>
+      
+      <div class="footer-links">
+        <div class="login-footer">
+          Don't have an account? <a href="register.html">Create one</a>
+        </div>
+        <div class="login-footer">
+          Login as Admin? <a href="login.html">Admin Login</a>
+        </div>
+      </div>
     </div>
   </div>
-<script src="loginscript.js"></script>
+  <script src="userLoginscript.js"></script>
 
 </body>
 </html>
