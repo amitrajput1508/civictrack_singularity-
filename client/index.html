@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>CivicTrack - Report Issue</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      max-width: 600px;
+      margin: auto;
+    }
+    input, textarea, select {
+      display: block;
+      width: 100%;
+      margin-bottom: 15px;
+      padding: 8px;
+    }
+    input[type="file"] {
+      padding: 5px;
+    }
+    button {
+      padding: 10px;
+      background-color: #007bff;
+      border: none;
+      color: white;
+      cursor: pointer;
+    }
+    #response {
+      margin-top: 20px;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+
+  <h2>🚧 Report a Civic Issue</h2>
+
+  <form id="issueForm">
+    <input type="text" name="title" placeholder="Issue Title" required>
+    <textarea name="description" placeholder="Describe the issue..." required></textarea>
+
+    <select name="category" required>
+      <option value="">--Select Category--</option>
+      <option value="Roads">Roads</option>
+      <option value="Lighting">Lighting</option>
+      <option value="Water Supply">Water Supply</option>
+      <option value="Cleanliness">Cleanliness</option>
+      <option value="Public Safety">Public Safety</option>
+      <option value="Obstructions">Obstructions</option>
+    </select>
+
+    <input type="number" name="latitude" step="any" placeholder="Latitude" required>
+    <input type="number" name="longitude" step="any" placeholder="Longitude" required>
+
+    <input type="file" name="photos" accept="image/*" multiple>
+
+    <button type="submit">Submit Issue</button>
+  </form>
+
+  <div id="response"></div>
+
+  <script>
+    const form = document.getElementById('issueForm');
+    const responseDiv = document.getElementById('response');
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const formData = new FormData(form);
+
+      try {
+        const res = await fetch('http://localhost:8000/api/issues', {
+          method: 'POST',
+          body: formData
+        });
+
+        const data = await res.json();
+        if (res.ok) {
+          responseDiv.innerHTML = `✅ ${data.message}`;
+          form.reset();
+        } else {
+          responseDiv.innerHTML = `❌ Error: ${data.error}`;
+        }
+      } catch (err) {
+        responseDiv.innerHTML = `❌ Server Error: ${err.message}`;
+      }
+    });
+  </script>
+</body>
+</html>

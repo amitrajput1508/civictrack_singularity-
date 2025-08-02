@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>CivicTrack Admin Dashboard</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      max-width: 1200px;
+      margin: auto;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 40px;
+    }
+    th, td {
+      border: 1px solid #ddd;
+      padding: 10px;
+      text-align: center;
+    }
+    th {
+      background-color: #007bff;
+      color: white;
+    }
+    select, button {
+      padding: 5px;
+    }
+    .badge {
+      padding: 5px 10px;
+      border-radius: 5px;
+      color: white;
+      font-weight: bold;
+    }
+    .Reported { background-color: gray; }
+    .InProgress { background-color: orange; }
+    .Resolved { background-color: green; }
+    .flagged {
+      background-color: red;
+      color: white;
+      font-size: 12px;
+      padding: 4px 8px;
+      border-radius: 5px;
+      font-weight: bold;
+    }
+    #analytics {
+      font-size: 16px;
+      margin-bottom: 20px;
+    }
+    #logoutBtn {
+      float: right;
+      margin-bottom: 20px;
+      background-color: red;
+      color: white;
+      border: none;
+      padding: 10px 15px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- 🔐 Admin check -->
+  <script>
+    if (localStorage.getItem("isAdmin") !== "true") {
+      alert("Access denied! Please login as admin.");
+      window.location.href = "login.html";
+    }
+  </script>
+
+  <h2>🧑‍💻 CivicTrack Admin Dashboard</h2>
+  <button id="logoutBtn" onclick="logout()">Logout</button>
+
+  <!-- Filters + Export -->
+  <div style="margin-bottom: 20px;">
+    <label>Filter Category:</label>
+    <select id="categoryFilter">
+      <option value="">All</option>
+      <option value="Roads">Roads</option>
+      <option value="Lighting">Lighting</option>
+      <option value="Water Supply">Water Supply</option>
+      <option value="Cleanliness">Cleanliness</option>
+      <option value="Public Safety">Public Safety</option>
+      <option value="Obstructions">Obstructions</option>
+    </select>
+
+    <label style="margin-left: 20px;">Filter Status:</label>
+    <select id="statusFilter">
+      <option value="">All</option>
+      <option value="Reported">Reported</option>
+      <option value="In Progress">In Progress</option>
+      <option value="Resolved">Resolved</option>
+    </select>
+
+    <button onclick="downloadCSV()" style="margin-left: 20px;">📥 Export Issues to CSV</button>
+    <button onclick="toggleChart()" style="margin-left: 10px;">📊 Chart</button>
+  </div>
+
+  <div id="analytics"></div>
+
+  <!-- 📊 Chart area (initially hidden) -->
+  <div id="chartSection" style="display: none; margin-bottom: 30px;">
+    <canvas id="categoryChart" width="400" height="200"></canvas>
+  </div>
+
+  <!-- 📋 Table -->
+  <table id="issueTable">
+    <thead>
+      <tr>
+        <th>Title</th>
+        <th>Category</th>
+        <th>Status</th>
+        <th>Change Status</th>
+        <th>Flag</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      <!-- Dynamic content -->
+    </tbody>
+  </table>
+
+  <script>
+    const tableBody = document.querySelector('#issueTable tbody');
+
+    function loadIssues() {
+      fetch('http://localhost:8000/api/issues')
+        .then(res => res.json())
+        .then(issues => {
+          const category = document.getElementById('categoryFilter').value;
+          const status = document.getElementById('statusFilter').value;
+
+          const filtered = issues.filter(issue => {
+            return (!category || issue.category === category) &&
+                   (!status || issue.status === status);
+          });
+
+          tableBody.innerHTML = '';
+          loadAnalytics(filtered);
+          renderIssues(filtered);
+        });
+    }
+
+    function renderIssues(issues) {
+      issues.forEach(issue => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td>${issue.title}</td>
+          <td>${issue.category}</td>
+          <td>
+            <span class="badge ${issue.status.replace(/\s/g, '')}">${issue.status}</span><br>
+            ${issue.isFlagged ? '<span class="flagged">Flagged</span>' : ''}
+          </td>
+          <td>
+            <select data-id="${issue._id}" onchange="updateStatus(this)">
+              <option value="">--Select--</option>
+              <option value="Reported">Reported</option>
+              <option value="In Progress">In Progress</option>
+              <option value="Resolved">Resolved</option>
+            </select>
+          </td>
+          <td>
+            <button onclick="toggleFlag('${issue._id}')">
+              ${issue.isFlagged ? 'Unflag' : 'Flag'}
+            </button>
+          </td>
+          <td>
+            <button onclick="deleteIssue('${issue._id}')">Delete</button>
+          </td>
+        `;
+        tableBody.appendChild(row);
+      });
+    }
+
+    function updateStatus(selectEl) {
+      const id = selectEl.getAttribute('data-id');
+      const status = selectEl.value;
+
+      fetch(`http://localhost:8000/api/issues/${id}/status`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status })
+      })
+      .then(res => res.json())
+      .then(data => {
+        alert(data.message || "Status updated");
+        loadIssues();
+      })
+      .catch(err => {
+        console.error('❌ PATCH Error:', err);
+        alert("Failed to update status.");
+      });
+    }
+
+    function deleteIssue(id) {
+      if (!confirm("Are you sure you want to delete this issue?")) return;
+
+      fetch(`http://localhost:8000/api/issues/${id}`, {
+        method: 'DELETE'
+      })
+      .then(res => res.json())
+      .then(data => {
+        alert(data.message || "Issue deleted");
+        loadIssues();
+      })
+      .catch(err => {
+        console.error('❌ DELETE Error:', err);
+        alert("Failed to delete issue.");
+      });
+    }
+
+    function toggleFlag(id) {
+      fetch(`http://localhost:8000/api/issues/${id}/flag`, {
+        method: 'PATCH'
+      })
+      .then(res => res.json())
+      .then(data => {
+        alert(data.message || "Flag updated");
+        loadIssues();
+      })
+      .catch(err => {
+        console.error('❌ FLAG Error:', err);
+        alert("Failed to toggle flag.");
+      });
+    }
+
+    function downloadCSV() {
+      fetch('http://localhost:8000/api/issues')
+        .then(res => res.json())
+        .then(data => {
+          const csvRows = [];
+          const headers = ['Title', 'Category', 'Status', 'Latitude', 'Longitude', 'Flagged'];
+          csvRows.push(headers.join(','));
+
+          data.forEach(issue => {
+            const row = [
+              `"${issue.title}"`,
+              issue.category,
+              issue.status,
+              issue.location?.coordinates[1] || '',
+              issue.location?.coordinates[0] || '',
+              issue.isFlagged ? 'Yes' : 'No'
+            ];
+            csvRows.push(row.join(','));
+          });
+
+          const blob = new Blob([csvRows.join('\n')], { type: 'text/csv' });
+          const url = window.URL.createObjectURL(blob);
+
+          const a = document.createElement('a');
+          a.setAttribute('href', url);
+          a.setAttribute('download', 'civictrack_issues.csv');
+          a.click();
+        });
+    }
+
+    function loadAnalytics(issues) {
+      const total = issues.length;
+      const categories = {};
+      issues.forEach(issue => {
+        categories[issue.category] = (categories[issue.category] || 0) + 1;
+      });
+
+      const mostCommon = Object.entries(categories).sort((a, b) => b[1] - a[1])[0];
+
+      document.getElementById('analytics').innerHTML = `
+        <strong>Total Issues:</strong> ${total}<br>
+        <strong>Most Reported Category:</strong> ${mostCommon ? mostCommon[0] + ' (' + mostCommon[1] + ')' : 'N/A'}
+      `;
+
+      renderChart(categories);
+    }
+
+    let chartInstance = null;
+
+    function renderChart(data) {
+      const ctx = document.getElementById('categoryChart').getContext('2d');
+      const labels = Object.keys(data);
+      const values = Object.values(data);
+
+      if (chartInstance) {
+        chartInstance.destroy();
+      }
+
+      chartInstance = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels,
+          datasets: [{
+            label: 'Issues by Category',
+            data: values,
+            backgroundColor: 'rgba(0, 123, 255, 0.7)',
+            borderRadius: 5
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            legend: { display: false },
+            title: { display: true, text: 'Issue Category Distribution' }
+          },
+          scales: {
+            y: { beginAtZero: true }
+          }
+        }
+      });
+    }
+
+    function toggleChart() {
+      const section = document.getElementById('chartSection');
+      section.style.display = (section.style.display === 'none') ? 'block' : 'none';
+    }
+
+    function logout() {
+      localStorage.removeItem("isAdmin");
+      window.location.href = "login.html";
+    }
+
+    document.getElementById('categoryFilter').addEventListener('change', loadIssues);
+    document.getElementById('statusFilter').addEventListener('change', loadIssues);
+
+    loadIssues();
+  </script>
+
+</body>
+</html>
